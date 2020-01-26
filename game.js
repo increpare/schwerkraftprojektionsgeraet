@@ -32,7 +32,6 @@ var images=[];
 var gw=4;
 var gh=4;
 
-var phase;
 var anim_frames=5;
 var anim_length=30;
 
@@ -542,29 +541,10 @@ soff=0;
 	state=[[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,0]];
 	spawn=[[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,0]];
 	anim_phase=0;
-	phase=0;
 	score=0;
 
 	moving=false;
 	return Promise.resolve(1);
-}
-
-
-function animtick(){
-
-	anim_phase++;
-	if (anim_phase>anim_frames){
-		anim_phase=anim_frames;
-	}
-
-
-	if (anim_phase<anim_frames)	{
-		setTimeout(animtick,anim_length);		
-	} else {
-		phase=0;
-	}
-
-	redraw();
 }
 
 var piece_frames={
@@ -837,7 +817,7 @@ async function doMove(dx,dy){
 		var oy=29-4*8;
 
 		var sx=5-Math.ceil(nächst_z_b/2)+soff;
-		var sy=projizieren()-1;
+		var sy=0;//projizieren()-1;
 		soff=0;
 		for (var i=0;i<nächst_z_b;i++){
 			var globale_z_x=sx+i;
