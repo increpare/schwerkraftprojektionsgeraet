@@ -1,57 +1,64 @@
 
-var canvas = document.getElementById('game');
+let canvas = document.getElementById('game');
 	// get canvas context
-var ctx = canvas.getContext('2d');
+let ctx = canvas.getContext('2d');
 // load image
 
-var sprache=0;
+let sprache=0;
 
-var cw=canvas.width;
-var ch=canvas.height;
+let cw=canvas.width;
+let ch=canvas.height;
 
-var music=null;
+let music=null;
 
 function reOffset(){
-  var BB=canvas.getBoundingClientRect();
+  let BB=canvas.getBoundingClientRect();
   offsetX=BB.left;
   offsetY=BB.top;        
 
 	cw=canvas.width;
 	ch=canvas.height;
 }
-var offsetX,offsetY;
+let offsetX,offsetY;
 reOffset();
 window["onscroll"]=function(e){ reOffset(); }
 window["onresize"]=function(e){ reOffset(); }
 
-var score=0;
-var scores=[0,0,0,0];
-var linecount=[0,0,0,0];
+let brunnenZustände = [
+	{
+		zustand:[],
+		anims:[],
+	}
+];
 
-var highscore=0;
+let score=0;
+let scores=[0,0,0,0];
+let linecount=[0,0,0,0];
 
-var images=[];
+let highscore=0;
 
-var gw=4;
-var gh=4;
+let images=[];
 
-
-var anim;
-var spawn;
-
-var verloren=false;
-var siegreich=false;
-
-var last=1;
-var laster=-1;
+let gw=4;
+let gh=4;
 
 
-var raster_b=10;
-var raster_h=22;
-var verborgene_zeilen=4;
+let anim;
+let spawn;
 
-var zustände=[];
-var anims=[];
+let verloren=false;
+let siegreich=false;
+
+let last=1;
+let laster=-1;
+
+
+let raster_b=10;
+let raster_h=22;
+let verborgene_zeilen=4;
+
+let zustand=[];
+let anims=[];
 
 function holZufälligeIntInklusi(min, max) {
   min = Math.ceil(min);
@@ -59,7 +66,7 @@ function holZufälligeIntInklusi(min, max) {
   return Math.floor(Math.random() * (max - min +1)) + min; 
 }
 
-var tetrominos = [
+let tetrominos = [
 	//tetris
 	[
 		[
@@ -198,24 +205,51 @@ var tetrominos = [
 			[ 0, 1, 1, ],
 		],
 		[
-			[ 0,0, 1, ],
-			[ 0,1, 1, ],
-			[ 0,1, 0, ],
+			[ 0, 1, ],
+			[ 1, 1, ],
+			[ 1, 0, ],
 		],
 		[
-			[ 0, 0, 0, ],
 			[ 1, 1, 0, ],
 			[ 0, 1, 1, ],
 		],
 		[
-			[ 0, 1, 0, ],
-			[ 1, 1, 0, ],
-			[ 1, 0, 0, ],
+			[ 0, 1,  ],
+			[ 1, 1,  ],
+			[ 1, 0,  ],
 		],
 	],
 ]
 
-var lookupdat=[
+
+function leftmost(stück){
+	let stück_h=stück.length;
+	let stück_b=stück[0].length;
+
+	for (var i=0;i<stück_b;i++){
+		for (var j=0;j<stück_h;j++){
+			if (stück[j][i]>0){
+				return i;
+			}
+		}
+	}
+
+	console.log("Soll nich hier ankommen! Muss 'nen Fehler geben.")
+	return -1;
+}
+
+let tetromino_onset=[]///record onset x values to allow for smart rotations in mirrored images
+
+for (let i=0;i<tetrominos.length;i++){
+	var rots=tetrominos[i];
+	var ar=[];
+	for (let j=0;j<rots.length;j++){
+		ar.push(leftmost(rots[j]))
+	}
+	tetromino_onset.push(ar);
+}
+
+let lookupdat=[
 	[4,0],//0000
 	[1,0],//0001
 	[3,0],//0010
@@ -236,7 +270,7 @@ var lookupdat=[
 ]
 
 
-var lookupdat_würfel=[
+let lookupdat_würfel=[
 	[4,0],//0000
 	[1,0],//0001
 	[3,0],//0010
@@ -257,7 +291,7 @@ var lookupdat_würfel=[
 ]
 
 function binstr(d){
-	var ts=d.toString(2);
+	let ts=d.toString(2);
 	while(ts.length<4){
 		ts="0"+ts;
 	}
@@ -265,10 +299,10 @@ function binstr(d){
 }
 function lookup(figuretyp,datum){
 	datum=(datum>>1)%16;
-	var ts=binstr(datum);
-	var tx=-1;
-	var ty=-1;
-	var lud=lookupdat[datum]
+	let ts=binstr(datum);
+	let tx=-1;
+	let ty=-1;
+	let lud=lookupdat[datum]
 
 	if (figuretyp===3){
 		lud=lookupdat_würfel[datum];
@@ -279,14 +313,14 @@ function lookup(figuretyp,datum){
 }
 
 function Verbindungen_Ausrechnen(raster,farbe){
-	var breite=raster[0].length;
-	var höhe=raster.length;
-	for (var i=0;i<breite;i++){
-		for (var j=0;j<höhe;j++){
-			var v_oben=0;
-			var v_unten=0;
-			var v_links=0;
-			var v_rechts=0;
+	let breite=raster[0].length;
+	let höhe=raster.length;
+	for (let i=0;i<breite;i++){
+		for (let j=0;j<höhe;j++){
+			let v_oben=0;
+			let v_unten=0;
+			let v_links=0;
+			let v_rechts=0;
 
 			if (raster[j][i]===0){
 				continue;
@@ -311,26 +345,27 @@ function Verbindungen_Ausrechnen(raster,farbe){
 	}
 }
 
-var verbindungen_ausgerechnet=false;
+let verbindungen_ausgerechnet=false;
 
 
-var zukünftiges=-1;
-var zukünftiges_drehung=-1;
+let zukünftiges=-1;
+let zukünftiges_drehung=-1;
 
-var nächst=-1;
-var nächst_drehung=-1;
-var tasche=[0,1,2,3,4,5,6];
+let globale_nächst_drehung=-1;
+let nächst=-1;
+let nächst_drehung=-1;
+let tasche=[0,1,2,3,4,5,6];
 
-var p_x=3;
-var p_y=3;
+let cursor_x=3;
+let cursor_y=3;
 
 
 async function prüfZeilen(){
-	var dscore=0;
-	var zeilen=[];
-	for (var j=0;j<raster_h;j++){
-		var voll=true;
-		for (var i=0;i<raster_b;i++){
+	let dscore=0;
+	let zeilen=[];
+	for (let j=0;j<raster_h;j++){
+		let voll=true;
+		for (let i=0;i<raster_b;i++){
 			if (zustand[j][i]===0){
 				voll=false;
 				continue;
@@ -338,7 +373,7 @@ async function prüfZeilen(){
 		}
 		if (voll){		
 			dscore++;
-			for (var i=0;i<raster_b;i++){
+			for (let i=0;i<raster_b;i++){
 				zustand[j][i]=0;
 				//2*v_rechts+4*v_links+8*v_unten+16*v_oben
 				if (j>0){
@@ -371,10 +406,10 @@ async function prüfZeilen(){
 		await sleep(50);
 		//fallen lassen
 
-		for (var j_index=0;j_index<zeilen.length;j_index++){
-			var j_leer = zeilen[j_index];
-			for (var j=j_leer;j>0;j--){
-				for (var i=0;i<raster_b;i++){
+		for (let j_index=0;j_index<zeilen.length;j_index++){
+			let j_leer = zeilen[j_index];
+			for (let j=j_leer;j>0;j--){
+				for (let i=0;i<raster_b;i++){
 					zustand[j][i]=zustand[j-1][i];
 					zustand[j-1][i]=0;
 				}
@@ -394,7 +429,7 @@ async function prüfZeilen(){
 }
 function wähleNeuesStück(){
 	nächst=zukünftiges;
-	nächst_drehung=zukünftiges_drehung;
+	globale_nächst_drehung=zukünftiges_drehung;
 
 	zukünftiges_index=holZufälligeIntInklusi(0,tasche.length-1);
 	zukünftiges=tasche[zukünftiges_index];	
@@ -414,12 +449,12 @@ function wähleNeuesStück(){
 
 function darfPlatzieren(stück,x,y){
 
-	var nächst_z_h=stück.length;
-	var nächst_z_b=stück[0].length;
-	for (var i=0;i<nächst_z_b;i++){
-		var globale_x=x+i;
-		for (var j=0;j<nächst_z_h;j++){
-			var globale_y=y+j;
+	let nächst_z_h=stück.length;
+	let nächst_z_b=stück[0].length;
+	for (let i=0;i<nächst_z_b;i++){
+		let globale_x=x+i;
+		for (let j=0;j<nächst_z_h;j++){
+			let globale_y=y+j;
 			if (stück[j][i]===0){
 				continue;
 			}
@@ -435,7 +470,7 @@ function darfPlatzieren(stück,x,y){
 	return true;
 }
 
-var template_namen=[
+let template_namen=[
 "template_1",
 "template_2",
 "template_3",
@@ -445,21 +480,21 @@ var template_namen=[
 "template_7"
 ];
 
-var soff=0;
+let soff=0;
 
 function projizieren(){	
-	var stück=tetrominos[nächst][nächst_drehung];
-	var nächst_z_h=stück.length;
-	var nächst_z_b=stück[0].length;
+	let stück=tetrominos[nächst][nächst_drehung];
+	let nächst_z_h=stück.length;
+	let nächst_z_b=stück[0].length;
 
-	var ox=168;
-	var oy=248-4*8;
+	let ox=168;
+	let oy=248-4*8;
 
-	var sx=5-Math.ceil(nächst_z_b/2)+soff;
-	var sy=0;
+	let sx=5-Math.ceil(nächst_z_b/2)+soff;
+	let sy=0;
 
-	var px=sx;
-	var py=0;
+	let px=sx;
+	let py=0;
 
 	while (darfPlatzieren(stück,px,py+1)){
 		py++;
@@ -468,46 +503,28 @@ function projizieren(){
 	if (moving===false){
 
 
-		var min_x_i=100;
-		var max_x_i=-100;
-		for (var i=0;i<nächst_z_b;i++){
-			var globale_z_x=ox+8*px+8*i;
 
-			var has=false;
-			for (var j=0;j<nächst_z_h;j++){
-				var sd = (stück[j][i]>>1)%16
-				if ( sd!==0){
-					has=true;
-				}
-			}
-			var globale_z_y=oy;
-
-			if (has){
-				ctx.drawImage(images["mokcup/mokcup_fg_dynamic_overlay"], globale_z_x,oy,8,oy+8*18, globale_z_x,oy,8,oy+8*18)
-			}
-		}
-		
-
-		for (var i=0;i<nächst_z_b;i++){
-			var globale_z_x=ox+8*px+8*i;
-			for (var j=0;j<nächst_z_h;j++){
+		for (let i=0;i<nächst_z_b;i++){
+			let globale_z_x=ox+8*px+8*i;
+			for (let j=0;j<nächst_z_h;j++){
 				if (py+j<2){
 
 				}
 				if (stück[j][i]>0){
-					var globale_z_y=oy+8*py+8*j;
+					let globale_z_y=oy+8*py+8*j;
 					if (globale_z_y<29){
 						continue;
 					}
-					var lu = lookup(nächst,stück[j][i]);
-					var tx=lu[0]*8;
-					var ty=lu[1]*8;	
+					let lu = lookup(nächst,stück[j][i]);
+					let tx=lu[0]*8;
+					let ty=lu[1]*8;	
 					ctx.drawImage(images["template_umriss"],tx,ty,8,8,globale_z_x,globale_z_y,8,8);
 				}
 			}
 		}
 
 	}
+
 	return py;
 
 }
@@ -527,10 +544,10 @@ soff=0;
 	playSound(4159307);
 
 	zustand=[];
-	for (var j=0;j<raster_h;j++){
-		var zeile=[];
-		var zeile_anim=[];
-		for (var i=0;i<raster_b;i++){
+	for (let j=0;j<raster_h;j++){
+		let zeile=[];
+		let zeile_anim=[];
+		for (let i=0;i<raster_b;i++){
 			zeile.push(0);
 			zeile_anim.push(0);
 		}
@@ -538,9 +555,9 @@ soff=0;
 		anims.push(zeile_anim);
 	}
 	if (verbindungen_ausgerechnet===false){
-		for (var i=0;i<tetrominos.length;i++){
-			var menge=tetrominos[i];
-			for (var j=0;j<menge.length;j++){
+		for (let i=0;i<tetrominos.length;i++){
+			let menge=tetrominos[i];
+			for (let j=0;j<menge.length;j++){
 				Verbindungen_Ausrechnen(menge[j],i);
 			}
 		}
@@ -561,31 +578,31 @@ soff=0;
 	return Promise.resolve(1);
 }
 
-var piece_frames={
+let piece_frames={
 	1:["weiss","weiss_1","weiss_1","weiss_1"],
 	2:["schwarz","schwarz_1","schwarz_1","weiss_1"],
 	};
 
-var bg_name =["mokcup/mokcup_fg","mokcup/mokcup_fg"];
+let bg_name =["mokcup/mokcup_fg","mokcup/mokcup_fg"];
 
-var goimg_name =["verloren_en","verloren_de"];
-var siegimg_name =["siegreich_en","siegreich_de"];
+let goimg_name =["verloren_en","verloren_de"];
+let siegimg_name =["siegreich_en","siegreich_de"];
 
-var _dx=[ [1,0],[0,-1],[-1,0],[0,1] ]
-var _dy=[ [0,1],[-1,0],[0,-1],[1,0] ]
-var _o = [ 
+let _dx=[ [1,0],[0,-1],[-1,0],[0,1] ]
+let _dy=[ [0,1],[-1,0],[0,-1],[1,0] ]
+let _o = [ 
 			[168,248],
 			[248,247],
 			[247,167],
 			[167,168] 
 		]
-var _scorebox=[97,38]
-var _linesbox=[97,86]
-var _nachstbox=[97,113]
+let _scorebox=[97,38]
+let _linesbox=[97,86]
+let _nachstbox=[97,113]
 
-var scorebox=[14,372]
-var highscorebox=[61,389]
-var PI = 3.141592653589793238462643383279;
+let scorebox=[14,372]
+let highscorebox=[61,389]
+let PI = 3.141592653589793238462643383279;
 
 function redraw(){
 
@@ -597,32 +614,32 @@ function redraw(){
 	const zentrum_y=168;
 
 
-	var zukünftiges_stück=tetrominos[zukünftiges][zukünftiges_drehung];
-	var zukünftiges_z_h=zukünftiges_stück.length;
-	var zukünftiges_z_b=zukünftiges_stück[0].length;
-	var zukünftiges_h=zukünftiges_z_h*8;
-	var zukünftiges_b=zukünftiges_z_b*8;
+	let zukünftiges_stück=tetrominos[zukünftiges][zukünftiges_drehung];
+	let zukünftiges_z_h=zukünftiges_stück.length;
+	let zukünftiges_z_b=zukünftiges_stück[0].length;
+	let zukünftiges_h=zukünftiges_z_h*8;
+	let zukünftiges_b=zukünftiges_z_b*8;
 	
-	var noxes=[264,360,120,24]
-	var noys=[360,120,24,264]
-	for (var q=0;q<4;q++){
-		var nox=noxes[q];
-		var noy=noys[q];
+	let noxes=[264,360,120,24]
+	let noys=[360,120,24,264]
+	for (let q=0;q<4;q++){
+		let nox=noxes[q];
+		let noy=noys[q];
 		
 		nox+=(4*8-zukünftiges_b)/2;
 		noy+=(4*8-zukünftiges_h)/2;
 
 		{
-			for (var i=0;i<zukünftiges_z_b;i++){
-				for (var j=0;j<zukünftiges_z_h;j++){
-					var z=zukünftiges_stück[j][i];
+			for (let i=0;i<zukünftiges_z_b;i++){
+				for (let j=0;j<zukünftiges_z_h;j++){
+					let z=zukünftiges_stück[j][i];
 					if (z!==0){
-						var x=nox+8*i;
-						var y=noy+8*j;
+						let x=nox+8*i;
+						let y=noy+8*j;
 						
-						var lu = lookup(zukünftiges,zukünftiges_stück[j][i]);
-						var tx=8*lu[0];
-						var ty=8*lu[1];
+						let lu = lookup(zukünftiges,zukünftiges_stück[j][i]);
+						let tx=8*lu[0];
+						let ty=8*lu[1];
 						ctx.drawImage(images[template_namen[zukünftiges]],tx,ty,8,8,x,y,8,8);
 					}
 				}
@@ -631,38 +648,128 @@ function redraw(){
 	}
 
 
-	var nächst_stück=tetrominos[nächst][nächst_drehung];
-	var nächst_z_h=nächst_stück.length;
-	var nächst_z_b=nächst_stück[0].length;
-	var nächst_h=nächst_z_h*8;
-	var nächst_b=nächst_z_b*8;
+	let nächst_stück=tetrominos[nächst][globale_nächst_drehung];
+	let nächst_z_h=nächst_stück.length;
+	let nächst_z_b=nächst_stück[0].length;
+	let nächst_h=nächst_z_h*8;
+	let nächst_b=nächst_z_b*8;
+
+	{
+		let nox=zentrum_x+8*cursor_x;
+		let noy=zentrum_y+8*cursor_y;
+
+		var spalte_y=24;
+		var spalte_höhe=368;
+
+		//Spalten
+		for (let i=0;i<nächst_z_b;i++){
+			let globale_z_x=nox+8*i;
+
+			let has=false;
+			for (let j=0;j<nächst_z_h;j++){
+				let sd = (nächst_stück[j][i]>>1)%16
+				if ( sd!==0){
+					has=true;
+					break;
+				}
+			}
+			if (has){
+				ctx.drawImage(images["mokcup/mokcup_fg_dynamic_overlay"], globale_z_x,spalte_y,8,spalte_höhe, globale_z_x,spalte_y,8,spalte_höhe)
+			}
+		}
+		
+
+		var zeile_x=24;
+		var zeile_breite=368;
+
+		//Zeilen
+		for (let j=0;j<nächst_z_h;j++){
+			let globale_z_y=noy+8*j;
+
+			let has=false;
+			for (let i=0;i<nächst_z_b;i++){
+				let sd = (nächst_stück[j][i]>>1)%16
+				if ( sd!==0){
+					has=true;
+					break;
+				}
+			}
+			if (has){
+				ctx.drawImage(images["mokcup/mokcup_fg_dynamic_overlay"], zeile_x,globale_z_y,zeile_breite,8, zeile_x,globale_z_y,zeile_breite,8)
+			}
+		}
+		
 
 
-	for (var brunnen_index=0;brunnen_index<4;brunnen_index++){
+		
+		{
+			for (let i=0;i<nächst_z_b;i++){
+				for (let j=0;j<nächst_z_h;j++){
+					let z=nächst_stück[j][i];
+					if (z!==0){
+						let x=nox+8*i;
+						let y=noy+8*j;
+						
+						let lu = lookup(nächst,nächst_stück[j][i]);
+						let tx=8*lu[0];
+						let ty=8*lu[1];
+						ctx.drawImage(images[template_namen[nächst]],tx,ty,8,8,x,y,8,8);
+					}
+				}
+			}
+		}
+	}
+
+	let [cursor_min_x,cursor_min_y,cursor_max_x,cursor_max_y]=calc_cursor_bounds();
+
+	for (let brunnen_index=0;brunnen_index<4;brunnen_index++){
 		ctx.save();
 		ctx.translate(208,208)
 		ctx.rotate(-brunnen_index*PI/2)
 		ctx.translate(-208,-208)
 		//nächst
-
 		
+		nächst_drehung=(globale_nächst_drehung+brunnen_index)%4;
+		nächst_stück=tetrominos[nächst][nächst_drehung];
+		nächst_z_h=nächst_stück.length;
+		nächst_z_b=nächst_stück[0].length;
+
+		let dx = 5-Math.ceil(nächst_z_b/2);
+		let dy = 5-Math.ceil(nächst_z_h/2);
+
+
+		switch(brunnen_index){
+			case 0:
+				soff=cursor_min_x-tetromino_onset[nächst][nächst_drehung]-dx;
+			break;
+			case 1:
+				soff=(9-cursor_max_y)-tetromino_onset[nächst][nächst_drehung]-dx;
+			break;
+			case 2:
+				soff=(9-cursor_max_x)-tetromino_onset[nächst][nächst_drehung]-dx;
+			break;
+			case 3:
+				soff=cursor_min_y-tetromino_onset[nächst][nächst_drehung]-dx;
+			break;
+		}
+
 		projizieren();
 
-		for (var i=0;i<raster_b;i++){
-			for (var j=verborgene_zeilen;j<raster_h;j++){
-				var z=zustand[j][i];
+		for (let i=0;i<raster_b;i++){
+			for (let j=verborgene_zeilen;j<raster_h;j++){
+				let z=zustand[j][i];
 				if (z!==0){
-					var sbx=168;
-					var sby=248;
+					let sbx=168;
+					let sby=248;
 
-					var x=sbx+8*i;
-					var y=sby+8*(j-verborgene_zeilen);
+					let x=sbx+8*i;
+					let y=sby+8*(j-verborgene_zeilen);
 					
-					var datum=zustand[j][i];
-					var stücktyp=((datum%256)>>5);
-					var lu = lookup(stücktyp,datum);
-					var tx=8*lu[0];
-					var ty=8*lu[1];
+					let datum=zustand[j][i];
+					let stücktyp=((datum%256)>>5);
+					let lu = lookup(stücktyp,datum);
+					let tx=8*lu[0];
+					let ty=8*lu[1];
 
 					ctx.drawImage(images[template_namen[stücktyp]],tx,ty,8,8,x,y,8,8);
 				}
@@ -670,42 +777,42 @@ function redraw(){
 		}
 
 
-		for(var i=0;i<3;i++){
-			var z_b=10;
-			var z_h=14;
-			var z_x=265;
-			var z_y=286;
-			var ziffer= Math.floor(scores[brunnen_index]/(Math.pow(10,i)))%10;
+		for(let i=0;i<3;i++){
+			let z_b=10;
+			let z_h=14;
+			let z_x=265;
+			let z_y=286;
+			let ziffer= Math.floor(scores[brunnen_index]/(Math.pow(10,i)))%10;
 			ctx.drawImage(images["ziffer_nokia_gr"],10*ziffer,0,z_b,z_h,z_x+12*i,z_y,z_b,z_h);
 		}
 
-		for(var i=0;i<3;i++){
-			var z_b=10;
-			var z_h=14;
-			var z_x=265;
-			var z_y=334;
-			var ziffer= Math.floor(linecount[brunnen_index]/(Math.pow(10,i)))%10;
+		for(let i=0;i<3;i++){
+			let z_b=10;
+			let z_h=14;
+			let z_x=265;
+			let z_y=334;
+			let ziffer= Math.floor(linecount[brunnen_index]/(Math.pow(10,i)))%10;
 			ctx.drawImage(images["ziffer_nokia_gr"],10*ziffer,0,z_b,z_h,z_x+12*i,z_y,z_b,z_h);
 		}
 
 
-		for(var i=0;i<3;i++){
-			var z_b=10;
-			var z_h=14;
-			var z_x=72;
-			var z_y=373;
-			var ziffer= Math.floor(score/(Math.pow(10,i)))%10;
+		for(let i=0;i<3;i++){
+			let z_b=10;
+			let z_h=14;
+			let z_x=72;
+			let z_y=373;
+			let ziffer= Math.floor(score/(Math.pow(10,i)))%10;
 			ctx.drawImage(images["ziffer_nokia"],10*ziffer,0,z_b,z_h,z_x+12*i,z_y,z_b,z_h);
 		}
 
 
 
-		for(var i=0;i<3;i++){
-			var z_b=10;
-			var z_h=14;
-			var z_x=72;
-			var z_y=393;
-			var ziffer= Math.floor(highscore/(Math.pow(10,i)))%10;
+		for(let i=0;i<3;i++){
+			let z_b=10;
+			let z_h=14;
+			let z_x=72;
+			let z_y=393;
+			let ziffer= Math.floor(highscore/(Math.pow(10,i)))%10;
 			ctx.drawImage(images["ziffer_nokia"],10*ziffer,0,z_b,z_h,z_x+12*i,z_y,z_b,z_h);
 		}
 
@@ -725,13 +832,13 @@ function redraw(){
 	}
 	for(i=0;i<pressed.length;i++){
 		if (pressed[i]){
-			var dat = image_x_y[i];
+			let dat = image_x_y[i];
 			ctx.drawImage(images[dat[sprache]],dat[2],dat[3]);
 		}
 	}
 }
 
-var image_names=[
+let image_names=[
 	"mokcup/mokcup_fg",
 	"mokcup/mokcup_fg_dynamic_overlay",
 
@@ -779,9 +886,9 @@ var image_names=[
 	"btn_stumm_aus_gedrückt",
 	];
 
-var stumm=false;
+let stumm=false;
 
-var image_x_y=[
+let image_x_y=[
 
 ["pressed_up","pressed_up",472,269,40,40],
 ["pressed_down","pressed_down",472,365,40,40],
@@ -795,8 +902,8 @@ var image_x_y=[
 
 ];
 
-for (var i=0;i<image_names.length;i++){
-	var image = new Image();
+for (let i=0;i<image_names.length;i++){
+	let image = new Image();
 	image.onload = function () {
 	    // draw the image into the canvas
 	    redraw();
@@ -810,8 +917,8 @@ function sleep(ms) {
 }
 
 function full(){
-	for (var i=0;i<gw;i++){
-		for (var j=0;j<gh;j++){
+	for (let i=0;i<gw;i++){
+		for (let j=0;j<gh;j++){
 			if (state[i][j]===0){
 				return true;
 			}
@@ -820,30 +927,30 @@ function full(){
 	return false;
 }
 
-var moving=false;
+let moving=false;
 
 function ErzeugenMöglich(){
-	for (var j=0;j<verborgene_zeilen;j++){
-		for (var i=0;i<raster_b;i++){
+	for (let j=0;j<verborgene_zeilen;j++){
+		for (let i=0;i<raster_b;i++){
 			if (zustand[j][i]!==0){
 				return false;
 			}
 		}
 	}
-	var stück=tetrominos[nächst][nächst_drehung];
-	var nächst_z_h=stück.length;
-	var nächst_z_b=stück[0].length;
+	let stück=tetrominos[nächst][nächst_drehung];
+	let nächst_z_h=stück.length;
+	let nächst_z_b=stück[0].length;
 
-	var ox=15;
-	var oy=29-4*8;
+	let ox=15;
+	let oy=29-4*8;
 
-	var sx=5-Math.ceil(nächst_z_b/2);
-	var sy=0;
+	let sx=5-Math.ceil(nächst_z_b/2);
+	let sy=0;
 
-	for (var i=0;i<nächst_z_b;i++){
-		var globale_z_x=sx+i;
-		for (var j=0;j<nächst_z_h;j++){
-			var globale_z_y=sy+j;
+	for (let i=0;i<nächst_z_b;i++){
+		let globale_z_x=sx+i;
+		for (let j=0;j<nächst_z_h;j++){
+			let globale_z_y=sy+j;
 			if (zustand[globale_z_y][globale_z_x]>0){
 				return false;
 			}
@@ -866,20 +973,20 @@ async function doMove(dx,dy){
 			return Promise.resolve(1);
 		}
 
-		var stück=tetrominos[nächst][nächst_drehung];
-		var nächst_z_h=stück.length;
-		var nächst_z_b=stück[0].length;
+		let stück=tetrominos[nächst][nächst_drehung];
+		let nächst_z_h=stück.length;
+		let nächst_z_b=stück[0].length;
 
-		var ox=15;
-		var oy=29-4*8;
+		let ox=15;
+		let oy=29-4*8;
 
-		var sx=5-Math.ceil(nächst_z_b/2)+soff;
-		var sy=0;//projizieren()-1;
+		let sx=5-Math.ceil(nächst_z_b/2)+soff;
+		let sy=0;//projizieren()-1;
 		soff=0;
-		for (var i=0;i<nächst_z_b;i++){
-			var globale_z_x=sx+i;
-			for (var j=0;j<nächst_z_h;j++){
-				var globale_z_y=sy+j;
+		for (let i=0;i<nächst_z_b;i++){
+			let globale_z_x=sx+i;
+			for (let j=0;j<nächst_z_h;j++){
+				let globale_z_y=sy+j;
 				console.log((stück[j][i]>>1)%16)
 				if (((stück[j][i]>>1)%16)!==0){
 					zustand[globale_z_y][globale_z_x]=stück[j][i];
@@ -901,21 +1008,21 @@ async function doMove(dx,dy){
 
 
 
-	var bewegt=true;
+	let bewegt=true;
 	while (bewegt){
 		bewegt=false;
 
-		var neuezustand=[];
-		for (var j=0;j<raster_h;j++){
-			var zeile=[];
-			for (var i=0;i<raster_b;i++){
+		let neuezustand=[];
+		for (let j=0;j<raster_h;j++){
+			let zeile=[];
+			for (let i=0;i<raster_b;i++){
 				zeile.push(0);
 			}
 			neuezustand.push(zeile);
 		}
 
-		for (var i=0;i<raster_b;i++){
-			for (var j=0;j<raster_h;j++){
+		for (let i=0;i<raster_b;i++){
+			for (let j=0;j<raster_h;j++){
 				if (zustand[j][i]===0 || ( (zustand[j][i]&256)===256) ){
 					anims[j][i]=0;
 				} else {
@@ -925,19 +1032,19 @@ async function doMove(dx,dy){
 		}
 
 
-		var verarbeiten=true;
+		let verarbeiten=true;
 		while (verarbeiten){
 			verarbeiten=false;
 
 			//bewegungen versperren
 
-			for (var i=0;i<raster_b;i++){
-				for (var j=0;j<raster_h;j++){
+			for (let i=0;i<raster_b;i++){
+				for (let j=0;j<raster_h;j++){
 					//wenn animation versperrt, mach propagation
 					if (zustand[j][i]>0 && anims[j][i]>0){
 						//prüf in der richtung der Bewegung
-						var tx=i+dx;
-						var ty=j+dy;
+						let tx=i+dx;
+						let ty=j+dy;
 						if (tx<0||ty<0||tx>=raster_b||ty>=raster_h){
 							anims[j][i]=0;
 							verarbeiten=true;
@@ -946,12 +1053,12 @@ async function doMove(dx,dy){
 							verarbeiten=true;							
 						} else {
 							//prüf verbundnen Ziegel
-							var datum = zustand[j][i];
+							let datum = zustand[j][i];
 							//2*v_rechts+4*v_links+8*v_unten+16*v_oben
-							var v_oben=(datum>>4)&1;
-							var v_unten=(datum>>3)&1;
-							var v_links=(datum>>2)&1;
-							var v_rechts=(datum>>1)&1;
+							let v_oben=(datum>>4)&1;
+							let v_unten=(datum>>3)&1;
+							let v_links=(datum>>2)&1;
+							let v_rechts=(datum>>1)&1;
 							if (v_oben===1){
 								if (anims[j-1][i]==0){
 									anims[j][i]=0;
@@ -983,10 +1090,10 @@ async function doMove(dx,dy){
 		}
 
 		//mach bewegungen
-		var was_ist_bewegt=false;
-		for (var i=0;i<raster_b;i++){
-			for (var j=0;j<raster_h;j++){
-				var datum=zustand[j][i];
+		let was_ist_bewegt=false;
+		for (let i=0;i<raster_b;i++){
+			for (let j=0;j<raster_h;j++){
+				let datum=zustand[j][i];
 				if (datum!==0){
 					if (anims[j][i]===0){
 						neuezustand[j][i]=datum;
@@ -1019,8 +1126,8 @@ async function doMove(dx,dy){
 
 	}
 
-	for (var i=0;i<raster_b;i++){
-		for (var j=0;j<raster_h;j++){
+	for (let i=0;i<raster_b;i++){
+		for (let j=0;j<raster_h;j++){
 			if (zustand[j][i]!==0){
 				zustand[j][i]=zustand[j][i]|256;
 			}
@@ -1036,40 +1143,127 @@ async function doMove(dx,dy){
 	return Promise.resolve(1);
 }
 
+function cursor_dsoff(dx,dy){
+	let neue_x=cursor_x+dx;
+	let neue_y=cursor_y+dy;
+
+	let stück=tetrominos[nächst][globale_nächst_drehung];
+	let nächst_z_h=stück.length;
+	let nächst_z_b=stück[0].length;
+
+	let arena_breite=10;
+	let arena_höhe=10;
+
+	let allesgute=true;
+
+	outerloop:
+	for (let i=0;i<nächst_z_b;i++){
+		let globale_x=neue_x+i;
+		for (let j=0;j<nächst_z_h;j++){
+			let globale_y=neue_y+j;
+			if (stück[j][i]===0){
+				continue;
+			}
+			if (globale_x>=10 || globale_y>=10 || globale_x<0 || globale_y<0){
+				allesgute = false;
+				break outerloop;
+			}
+		}
+	}
+
+	if (allesgute){
+		cursor_x=neue_x;
+		cursor_y=neue_y;
+	}
+}
+
 function dsoff(ds){
-	var newsoff=soff+ds;
+	let newsoff=soff+ds;
 
-	var stück=tetrominos[nächst][nächst_drehung];
-	var nächst_z_h=stück.length;
-	var nächst_z_b=stück[0].length;
+	let stück=tetrominos[nächst][nächst_drehung];
+	let nächst_z_h=stück.length;
+	let nächst_z_b=stück[0].length;
 
-	var ox=15;
-	var oy=29-4*8;
+	let ox=15;
+	let oy=29-4*8;
 
-	var sx=5-Math.ceil(nächst_z_b/2)+newsoff;
-	var sy=0;
+	let sx=5-Math.ceil(nächst_z_b/2)+newsoff;
+	let sy=0;
 
-	var px=sx;
-	var py=0;
+	let px=sx;
+	let py=0;
 
 	if (darfPlatzieren(stück,sx,sy)){
 		soff=newsoff;
 	}
 }
 
+function calc_cursor_bounds(){
+
+	let stück=tetrominos[nächst][globale_nächst_drehung];
+	let nächst_z_h=stück.length;
+	let nächst_z_b=stück[0].length;
+
+	let min_x=100;
+	let max_x=-100;
+	let min_y=100;
+	let max_y=-100;
+
+	for (let i=0;i<nächst_z_b;i++){
+		let globale_x=cursor_x+i;
+		for (let j=0;j<nächst_z_h;j++){
+			let globale_y=cursor_y+j;
+			if (stück[j][i]===0){
+				continue;
+			}
+			if(globale_x<min_x){
+				min_x=globale_x;
+			}
+			if(globale_y<min_y){
+				min_y=globale_y;
+			}
+			if(globale_x>max_x){
+				max_x=globale_x;
+			}
+			if(globale_y>max_y){
+				max_y=globale_y;
+			}
+		}
+	}
+
+	return [min_x,min_y,max_x,max_y]
+}
+
+function zetrum_oob(){
+	var [min_x,min_y,max_x,max_y]=calc_cursor_bounds();
+	if(min_x<0){
+		cursor_x-=min_x;
+	}
+	if(min_y<0){
+		cursor_y-=min_y;
+	}
+
+	if(max_x>=10){
+		cursor_x-=(max_x-9);
+	}
+	if(max_y>=10){
+		cursor_y-=(max_y-9);
+	}
+}
+
 function oob(){
-	var stück=tetrominos[nächst][nächst_drehung];
-	var nächst_z_h=stück.length;
-	var nächst_z_b=stück[0].length;
+	let stück=tetrominos[nächst][nächst_drehung];
+	let nächst_z_h=stück.length;
+	let nächst_z_b=stück[0].length;
 
-	var ox=15;
-	var oy=29-4*8;
+	let ox=15;
+	let oy=29-4*8;
 
-	var sx=5-Math.ceil(nächst_z_b/2)+soff;
-	var sy=0;
+	let sx=5-Math.ceil(nächst_z_b/2)+soff;
+	let sy=0;
 
-	var px=sx;
-	var py=0;
+	let px=sx;
+	let py=0;
 
 	if (darfPlatzieren(stück,sx,sy)===false){
 		if (soff<0){
@@ -1093,34 +1287,47 @@ async function doPress(i){
 
 	pressed[i]=true;
 	
-	if (i===0){
-		// await doMove(0,-1);
-		nächst_drehung=(nächst_drehung+1)%tetrominos[nächst].length;
-		oob();
-	} else if (i===1){
-		await doMove(0,1);
-	} else if (i===2){
-		dsoff(-1);
-		// await doMove(-1,0);
-	} else if (i===3){	
-		dsoff(1);
-		// await doMove(1,0);
-	} else if (i===8){
-		await resetGame();
-	} else if (i===5){
-		sprache=1-sprache;
-		// await resetGame();
-	} else if (i===7){
-		stumm=!stumm;
-		if (stumm===true){
-			image_x_y[7][0]="btn_mute_pressed";
-			image_x_y[7][1]="btn_mute_pressed";
-			music.pause();
-		} else {
-			image_x_y[7][0]="btn_unmuted_pressed";
-			image_x_y[7][1]="btn_unmuted_pressed";
-			music.play()
+	switch(i){
+		case 0:
+			cursor_dsoff(0,-1);
+		break;
+		case 1:
+			cursor_dsoff(0,1);
+		break;
+		case 2:
+			cursor_dsoff(-1,0);
+		break;
+		case 3:
+			cursor_dsoff(1,0);
+		break;
+		case 4:
+			globale_nächst_drehung=(globale_nächst_drehung+1)%tetrominos[nächst].length;
+			zetrum_oob();
+		break;
+		case 5:
+			globale_nächst_drehung=(globale_nächst_drehung+3)%tetrominos[nächst].length;
+			zetrum_oob();
+		break;
+		case 6://place
+
+		break;
+		case 7://mute
+		{
+			stumm=!stumm;
+			if (stumm===true){
+				image_x_y[7][0]="btn_mute_pressed";
+				image_x_y[7][1]="btn_mute_pressed";
+				music.pause();
+			} else {
+				image_x_y[7][0]="btn_unmuted_pressed";
+				image_x_y[7][1]="btn_unmuted_pressed";
+				music.play()
+			}
+			break;
 		}
+		case 8://restart
+			await resetGame();
+		break;
 	}
 
 	moving=false;
@@ -1129,12 +1336,12 @@ async function doPress(i){
 }
 
 function  getMousePos(evt) {
-	var rect = canvas.getBoundingClientRect(), // abs. size of element
+	let rect = canvas.getBoundingClientRect(), // abs. size of element
 	scaleX = canvas.width / rect.width,    // relationship bitmap vs. element for X
 	scaleY = canvas.height / rect.height;  // relationship bitmap vs. element for Y
 
-	var clientX=evt.clientX;
-	var clientY=evt.clientY;
+	let clientX=evt.clientX;
+	let clientY=evt.clientY;
 
 	if (scaleX<scaleY){
 		scaleX=scaleY;
@@ -1143,13 +1350,13 @@ function  getMousePos(evt) {
 		scaleY=scaleX;
 		clientY-=rect.height/2-(ch/scaleY)/2;
 	}
-	var x = (clientX - rect.left) * scaleX;   // scale mouse coordinates after they have
-	var y =(clientY - rect.top) * scaleY     // been adjusted to be relative to element
+	let x = (clientX - rect.left) * scaleX;   // scale mouse coordinates after they have
+	let y =(clientY - rect.top) * scaleY     // been adjusted to be relative to element
 
 	return [x,y];
 }
 
-var target=-1;
+let target=-1;
 
 
 function handleUntap(e){
@@ -1164,15 +1371,15 @@ function handleTap(e){
 
 	trySetupAudio();
 
-	var [mouseX,mouseY] =getMousePos(e);
+	let [mouseX,mouseY] =getMousePos(e);
 
 
 
-	// var xoff=0;
-	// var yoff=0;
+	// let xoff=0;
+	// let yoff=0;
 
-	// var canvas_width_pixeled=Math.floor(canvas.width*canvas.width/rect.width);
-	// var canvas_height_pixeled=Math.floor(canvas.width*canvas.height/rect.height);
+	// let canvas_width_pixeled=Math.floor(canvas.width*canvas.width/rect.width);
+	// let canvas_height_pixeled=Math.floor(canvas.width*canvas.height/rect.height);
 
 	// xoff = Math.floor(canvas_width_pixeled/2-cw/2);
 	// yoff = Math.floor(canvas_height_pixeled/2-ch/2);
@@ -1180,12 +1387,12 @@ function handleTap(e){
 	// mouseX+=xoff;
 	// mouseY+=yoff;
 
-	for (var i=0;i<image_x_y.length;i++){
-		var dat = image_x_y[i];
-		var x_min=dat[2];
-		var y_min=dat[3];
-		var x_max=dat[2]+dat[4];
-		var y_max=dat[3]+dat[5];
+	for (let i=0;i<image_x_y.length;i++){
+		let dat = image_x_y[i];
+		let x_min=dat[2];
+		let y_min=dat[3];
+		let x_max=dat[2]+dat[4];
+		let y_max=dat[3]+dat[5];
 
 		if (mouseX>=x_min&&mouseX<=x_max&&mouseY>=y_min&&mouseY<=y_max){
 
@@ -1201,9 +1408,9 @@ function handleTap(e){
 }
 
 function emptyCells(){
-	var result=[];
-	for(var i=0;i<gw;i++){
-		for (var j=0;j<gh;j++){
+	let result=[];
+	for(let i=0;i<gw;i++){
+		for (let j=0;j<gh;j++){
 			if (state[i][j]===0){
 				result.push([i,j]);
 			}
@@ -1213,7 +1420,7 @@ function emptyCells(){
 }
 
 function neighbors (x,y){
-  var result=[];
+  let result=[];
   if (x>0){
     result.push([x-1,y]);
   }
@@ -1272,13 +1479,13 @@ function handleKeyDown(e){
 		return false;
 	}
 
-	if (k==="x"||k==="e"){
+	if (k==="c"||k==="e"){
 		doPress(5);
 		e.preventDefault();
 		return false;
 	}
 
-	if (k===" "||k==="c"){
+	if (k===" "||k==="x"){
 		doPress(6);
 		e.preventDefault();
 		return false;
@@ -1299,7 +1506,7 @@ function handleKeyDown(e){
 
 }
 
-var pressed=[false,false,false,false,false,false,false];
+let pressed=[false,false,false,false,false,false,false];
 
 function handleKeyUp(e){
 	k = e.key.toLowerCase();
@@ -1321,11 +1528,11 @@ function handleKeyUp(e){
 		pressed[4]=false;
 	}
 
-	if (k==="x"||k==="e"){
+	if (k==="c"||k==="e"){
 		pressed[5]=false;
 	}
 
-	if (k===" "||k==="c"){
+	if (k===" "||k==="x"){
 		pressed[6]=false;
 	}
 
