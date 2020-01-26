@@ -321,6 +321,10 @@ var nächst=-1;
 var nächst_drehung=-1;
 var tasche=[0,1,2,3,4,5,6];
 
+var p_x=3;
+var p_y=3;
+
+
 async function prüfZeilen(){
 	var dscore=0;
 	var zeilen=[];
@@ -589,44 +593,59 @@ function redraw(){
 
 	ctx.drawImage(images[bg_name[sprache]], 0, 0);	
 
+	const zentrum_x=168;
+	const zentrum_y=168;
+
+
+	var zukünftiges_stück=tetrominos[zukünftiges][zukünftiges_drehung];
+	var zukünftiges_z_h=zukünftiges_stück.length;
+	var zukünftiges_z_b=zukünftiges_stück[0].length;
+	var zukünftiges_h=zukünftiges_z_h*8;
+	var zukünftiges_b=zukünftiges_z_b*8;
+	
+	var noxes=[264,360,120,24]
+	var noys=[360,120,24,264]
+	for (var q=0;q<4;q++){
+		var nox=noxes[q];
+		var noy=noys[q];
+		
+		nox+=(4*8-zukünftiges_b)/2;
+		noy+=(4*8-zukünftiges_h)/2;
+
+		{
+			for (var i=0;i<zukünftiges_z_b;i++){
+				for (var j=0;j<zukünftiges_z_h;j++){
+					var z=zukünftiges_stück[j][i];
+					if (z!==0){
+						var x=nox+8*i;
+						var y=noy+8*j;
+						
+						var lu = lookup(zukünftiges,zukünftiges_stück[j][i]);
+						var tx=8*lu[0];
+						var ty=8*lu[1];
+						ctx.drawImage(images[template_namen[zukünftiges]],tx,ty,8,8,x,y,8,8);
+					}
+				}
+			}
+		}
+	}
+
+
+	var nächst_stück=tetrominos[nächst][nächst_drehung];
+	var nächst_z_h=nächst_stück.length;
+	var nächst_z_b=nächst_stück[0].length;
+	var nächst_h=nächst_z_h*8;
+	var nächst_b=nächst_z_b*8;
+
+
 	for (var brunnen_index=0;brunnen_index<4;brunnen_index++){
 		ctx.save();
 		ctx.translate(208,208)
 		ctx.rotate(-brunnen_index*PI/2)
 		ctx.translate(-208,-208)
 		//nächst
-		var nox=264;
-		var noy=360;
-		var nächst_stück=tetrominos[nächst][nächst_drehung];
-		var nächst_z_h=nächst_stück.length;
-		var nächst_z_b=nächst_stück[0].length;
-		var nächst_h=nächst_z_h*8;
-		var nächst_b=nächst_z_b*8;
-		
-		var zukünftiges_stück=tetrominos[zukünftiges][(zukünftiges_drehung+brunnen_index)%4];
-		var zukünftiges_z_h=zukünftiges_stück.length;
-		var zukünftiges_z_b=zukünftiges_stück[0].length;
-		var zukünftiges_h=zukünftiges_z_h*8;
-		var zukünftiges_b=zukünftiges_z_b*8;
-		
-		
-		nox+=(4*8-zukünftiges_b)/2;
-		noy+=(4*8-zukünftiges_h)/2;
-		for (var i=0;i<zukünftiges_z_b;i++){
-			for (var j=0;j<zukünftiges_z_h;j++){
-				var z=zukünftiges_stück[j][i];
-				if (z!==0){
-					var x=nox+8*i;
-					var y=noy+8*j;
-					
-					var lu = lookup(zukünftiges,zukünftiges_stück[j][i]);
-					var tx=8*lu[0];
-					var ty=8*lu[1];
-					ctx.drawImage(images[template_namen[zukünftiges]],tx,ty,8,8,x,y,8,8);
-				}
-			}
-		}
 
+		
 		projizieren();
 
 		for (var i=0;i<raster_b;i++){
@@ -1209,73 +1228,6 @@ function neighbors (x,y){
   }
   return result;
 }
-
-function versuchFloodFill(x,y,todelete){
-
-
-	if (state[x][y]===0){
-	  return false;
-	}
-
-  var farbe = state[x][y];
-  
-  var base_idx=x+gw*y;
-  if (todelete.indexOf(base_idx)>=0){
-    return false;
-  }
-
-  
-  var visited=[base_idx];
-
-  var modified=true;
-  while(modified){
-    modified=false;
-
-    for (var i=0;i<gw;i++){
-      for (var j=0;j<gh;j++){
-        var idx = i+gw*j;
-        if (visited.indexOf(idx)>=0){
-          continue;
-        }
-
-        //check if you've visited neighbours
-        var hasneighbour=false;
-        var nbs = neighbors(i,j);
-        for (var k=0;k<nbs.length;k++){
-          var nb = nbs[k];
-          var nbi=nb[0]+gw*nb[1];
-          if (visited.indexOf(nbi)>=0){
-            hasneighbour=true;
-          }
-        }
-        if (hasneighbour===false){
-          continue;
-        }
-
-        var zelle_farbe=state[i][j];
-        if (zelle_farbe===0){
-          //escaped -- return! :)
-          return false;
-        }
-        if (zelle_farbe!==farbe){
-          continue;
-        }
-
-        visited.push(idx);
-        modified=true;
-      }
-    }
-  }
-
-  if (visited.length===16){
-    visited=[];
-  }
-  for (var i=0;i<visited.length;i++){
-    todelete.push(visited[i]);
-  }
-  return visited.length>0;
-}
-
 
 function trySetupAudio(){
 	return;
