@@ -25,6 +25,9 @@ window["onscroll"]=function(e){ reOffset(); }
 window["onresize"]=function(e){ reOffset(); }
 
 var score=0;
+var scores=[0,0,0,0];
+var linecount=[0,0,0,0];
+
 var highscore=0;
 
 var images=[];
@@ -32,10 +35,7 @@ var images=[];
 var gw=4;
 var gh=4;
 
-var anim_frames=5;
-var anim_length=30;
 
-var anim_phase;//goes to 10 say
 var anim;
 var spawn;
 
@@ -126,6 +126,18 @@ var tetrominos = [
 	],
 	// O-piece
 	[
+		[
+			[ 1, 1, ],
+			[ 1, 1, ],
+		],
+		[
+			[ 1, 1, ],
+			[ 1, 1, ],
+		],
+		[
+			[ 1, 1, ],
+			[ 1, 1, ],
+		],
 		[
 			[ 1, 1, ],
 			[ 1, 1, ],
@@ -373,7 +385,7 @@ async function prüfZeilen(){
 	score=dscore;
 	if (score>highscore){
 		highscore=score;
-		localStorage.setItem('my_max_combo',highscore);
+		localStorage.setItem('musi_my_max_combo',highscore);
 	}
 }
 function wähleNeuesStück(){
@@ -460,7 +472,6 @@ function projizieren(){
 			var has=false;
 			for (var j=0;j<nächst_z_h;j++){
 				var sd = (stück[j][i]>>1)%16
-				console.log(sd)
 				if ( sd!==0){
 					has=true;
 				}
@@ -540,7 +551,6 @@ soff=0;
 	[[0,0],[0,0],[0,0],[0,0],[0,0]]];
 	state=[[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,0]];
 	spawn=[[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,0]];
-	anim_phase=0;
 	score=0;
 
 	moving=false;
@@ -593,7 +603,7 @@ function redraw(){
 		var nächst_h=nächst_z_h*8;
 		var nächst_b=nächst_z_b*8;
 		
-		var zukünftiges_stück=tetrominos[zukünftiges][zukünftiges_drehung];
+		var zukünftiges_stück=tetrominos[zukünftiges][(zukünftiges_drehung+brunnen_index)%4];
 		var zukünftiges_z_h=zukünftiges_stück.length;
 		var zukünftiges_z_b=zukünftiges_stück[0].length;
 		var zukünftiges_h=zukünftiges_z_h*8;
@@ -630,8 +640,7 @@ function redraw(){
 					var y=sby+8*(j-verborgene_zeilen);
 					
 					var datum=zustand[j][i];
-					var stücktyp=datum>>5;
-					console.log(stücktyp);
+					var stücktyp=((datum%256)>>5);
 					var lu = lookup(stücktyp,datum);
 					var tx=8*lu[0];
 					var ty=8*lu[1];
@@ -642,6 +651,44 @@ function redraw(){
 		}
 
 
+		for(var i=0;i<3;i++){
+			var z_b=10;
+			var z_h=14;
+			var z_x=265;
+			var z_y=286;
+			var ziffer= Math.floor(scores[brunnen_index]/(Math.pow(10,i)))%10;
+			ctx.drawImage(images["ziffer_nokia_gr"],10*ziffer,0,z_b,z_h,z_x+12*i,z_y,z_b,z_h);
+		}
+
+		for(var i=0;i<3;i++){
+			var z_b=10;
+			var z_h=14;
+			var z_x=265;
+			var z_y=334;
+			var ziffer= Math.floor(linecount[brunnen_index]/(Math.pow(10,i)))%10;
+			ctx.drawImage(images["ziffer_nokia_gr"],10*ziffer,0,z_b,z_h,z_x+12*i,z_y,z_b,z_h);
+		}
+
+
+		for(var i=0;i<3;i++){
+			var z_b=10;
+			var z_h=14;
+			var z_x=72;
+			var z_y=373;
+			var ziffer= Math.floor(score/(Math.pow(10,i)))%10;
+			ctx.drawImage(images["ziffer_nokia"],10*ziffer,0,z_b,z_h,z_x+12*i,z_y,z_b,z_h);
+		}
+
+
+
+		for(var i=0;i<3;i++){
+			var z_b=10;
+			var z_h=14;
+			var z_x=72;
+			var z_y=393;
+			var ziffer= Math.floor(highscore/(Math.pow(10,i)))%10;
+			ctx.drawImage(images["ziffer_nokia"],10*ziffer,0,z_b,z_h,z_x+12*i,z_y,z_b,z_h);
+		}
 
 		ctx.restore();
 	}
@@ -652,15 +699,6 @@ function redraw(){
 		ctx.drawImage(images[siegimg_name[sprache]],15,29);
 	}
 
-
-	for(var i=0;i<3;i++){
-		var z_b=10;
-		var z_h=14;
-		var z_x=125;
-		var z_y=161;
-		var ziffer= Math.floor(highscore/(Math.pow(10,i)))%10;
-		ctx.drawImage(images["ziffer_nokia"],10*ziffer,0,z_b,z_h,z_x+4*i,z_y,z_b,z_h);
-	}
 
 
 	if (stumm){
@@ -859,7 +897,7 @@ async function doMove(dx,dy){
 
 		for (var i=0;i<raster_b;i++){
 			for (var j=0;j<raster_h;j++){
-				if (zustand[j][i]===0){
+				if (zustand[j][i]===0 || ( (zustand[j][i]&256)===256) ){
 					anims[j][i]=0;
 				} else {
 					anims[j][i]=1;
@@ -960,6 +998,14 @@ async function doMove(dx,dy){
 			}
 		}
 
+	}
+
+	for (var i=0;i<raster_b;i++){
+		for (var j=0;j<raster_h;j++){
+			if (zustand[j][i]!==0){
+				zustand[j][i]=zustand[j][i]|256;
+			}
+		}
 	}
 
 	await prüfZeilen();
@@ -1348,7 +1394,7 @@ canvas.addEventListener("pointerup",handleUntap);
 document.addEventListener("keydown",handleKeyDown);
 document.addEventListener("keyup",handleKeyUp);
 
-highscore = parseInt(localStorage.getItem('my_max_combo'));
+highscore = parseInt(localStorage.getItem('musi_my_max_combo'));
 if (Number.isNaN(highscore)){
 	highscore=0;
 }

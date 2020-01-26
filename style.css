@@ -23,7 +23,7 @@ html{
 		}
 
 		canvas {  
-    width: 90vw;
-    height: 90vh;
+    width: 99vw;
+    height: 99vh;
     object-fit: contain;
 }
