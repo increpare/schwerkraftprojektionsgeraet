@@ -1,0 +1,29 @@
+html{
+
+  image-rendering: -moz-crisp-edges;
+  image-rendering: -webkit-crisp-edges;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+
+		}
+		body {
+			background-color: #008282;
+			/*background-image: url("bgtile.png");*/
+  			/*background-size: cover;*/
+        /*background-repeat:repeat;*/
+
+  image-rendering: -moz-crisp-edges;
+  image-rendering: -webkit-crisp-edges;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+
+  text-align: center;
+  margin-left: auto;
+  margin-right: auto;
+		}
+
+		canvas {  
+    width: 90vw;
+    height: 90vh;
+    object-fit: contain;
+}
