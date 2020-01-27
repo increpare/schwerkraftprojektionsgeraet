@@ -11,6 +11,8 @@ let ch=canvas.height;
 
 let music=null;
 
+const MAX_BRUNNEN=4;
+
 function reOffset(){
   let BB=canvas.getBoundingClientRect();
   offsetX=BB.left;
@@ -46,7 +48,7 @@ let laster=-1;
 
 
 let raster_b=10;
-let raster_h=22;
+let raster_h=14;
 let verborgene_zeilen=4;
 
 let zustand=[];
@@ -387,8 +389,10 @@ async function prüfZeilen(){
 		}
 	}
 
+	console.log("dscore="+dscore)
+	
 	if (dscore>=4){
-		siegreich=true;
+		// siegreich=true;
 	}
 
 	// dscore=dscore*dscore;	
@@ -402,6 +406,7 @@ async function prüfZeilen(){
 		await sleep(50);
 		//fallen lassen
 
+		console.log("fallen")
 		for (let j_index=0;j_index<zeilen.length;j_index++){
 			let j_leer = zeilen[j_index];
 			for (let j=j_leer;j>0;j--){
@@ -422,7 +427,10 @@ async function prüfZeilen(){
 		highscore=score;
 		localStorage.setItem('musi_my_max_combo',highscore);
 	}
+
+	return Promise.resolve(1);
 }
+
 function wähleNeuesStück(){
 	nächst=zukünftiges;
 	globale_nächst_drehung=zukünftiges_drehung;
@@ -541,7 +549,7 @@ soff=0;
 
 	alle_zustände=[]
 	alle_anims=[]
-	for (let brunnen_index=0;brunnen_index<4;brunnen_index++){
+	for (let brunnen_index=0;brunnen_index<MAX_BRUNNEN;brunnen_index++){
 		anims=[];
 		zustand=[];
 		for (let j=0;j<raster_h;j++){
@@ -581,7 +589,7 @@ let piece_frames={
 
 let bg_name =["mokcup/mokcup_fg","mokcup/mokcup_fg"];
 
-let goimg_name =["verloren_en","verloren_de"];
+let goimg_name =["verloren_en","verloren_en"];
 let siegimg_name =["siegreich_en","siegreich_de"];
 
 let _dx=[ [1,0],[0,-1],[-1,0],[0,1] ]
@@ -595,6 +603,40 @@ let _o = [
 
 let PI = 3.141592653589793238462643383279;
 
+let globaler_brunnen=-1;
+function setGlobalerZustand(brunnen_index){
+	console.log("setGlobalerZustand"+brunnen_index)
+	globaler_brunnen=brunnen_index;
+	zustand=alle_zustände[brunnen_index]
+	anims=alle_anims[brunnen_index]
+	nächst_drehung=(globale_nächst_drehung+brunnen_index)%4;
+
+	nächst_stück=tetrominos[nächst][nächst_drehung];
+	nächst_z_h=nächst_stück.length;
+	nächst_z_b=nächst_stück[0].length;
+
+	let dx = 5-Math.ceil(nächst_z_b/2);
+	let dy = 5-Math.ceil(nächst_z_h/2);
+
+	let [cursor_min_x,cursor_min_y,cursor_max_x,cursor_max_y]=calc_cursor_bounds();
+
+	switch(brunnen_index){
+		case 0:
+			soff=cursor_min_x-tetromino_onset[nächst][nächst_drehung]-dx;
+		break;
+		case 1:
+			soff=(9-cursor_max_y)-tetromino_onset[nächst][nächst_drehung]-dx;
+		break;
+		case 2:
+			soff=(9-cursor_max_x)-tetromino_onset[nächst][nächst_drehung]-dx;
+		break;
+		case 3:
+			soff=cursor_min_y-tetromino_onset[nächst][nächst_drehung]-dx;
+		break;
+	}
+
+}
+
 function redraw(){
 
 	ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -603,7 +645,6 @@ function redraw(){
 
 	const zentrum_x=168;
 	const zentrum_y=168;
-
 
 	let zukünftiges_stück=tetrominos[zukünftiges][zukünftiges_drehung];
 	let zukünftiges_z_h=zukünftiges_stück.length;
@@ -665,7 +706,7 @@ function redraw(){
 				}
 			}
 			if (has){
-				ctx.drawImage(images["mokcup/mokcup_fg_dynamic_overlay"], globale_z_x,spalte_y,8,spalte_höhe, globale_z_x,spalte_y,8,spalte_höhe)
+				// ctx.drawImage(images["mokcup/mokcup_fg_dynamic_overlay"], globale_z_x,spalte_y,8,spalte_höhe, globale_z_x,spalte_y,8,spalte_höhe)
 			}
 		}
 		
@@ -686,7 +727,7 @@ function redraw(){
 				}
 			}
 			if (has){
-				ctx.drawImage(images["mokcup/mokcup_fg_dynamic_overlay"], zeile_x,globale_z_y,zeile_breite,8, zeile_x,globale_z_y,zeile_breite,8)
+				// ctx.drawImage(images["mokcup/mokcup_fg_dynamic_overlay"], zeile_x,globale_z_y,zeile_breite,8, zeile_x,globale_z_y,zeile_breite,8)
 			}
 		}
 		
@@ -710,39 +751,23 @@ function redraw(){
 			}
 		}
 	}
+	
+	var alte_brunnen_zustand=globaler_brunnen;
 
-	let [cursor_min_x,cursor_min_y,cursor_max_x,cursor_max_y]=calc_cursor_bounds();
-
-	for (let brunnen_index=0;brunnen_index<4;brunnen_index++){
+	for (let brunnen_index=0;brunnen_index<MAX_BRUNNEN;brunnen_index++){
 		ctx.save();
 		ctx.translate(208,208)
 		ctx.rotate(-brunnen_index*PI/2)
 		ctx.translate(-208,-208)
 		//nächst
 		
-		nächst_drehung=(globale_nächst_drehung+brunnen_index)%4;
+		setGlobalerZustand(brunnen_index)
+
 		nächst_stück=tetrominos[nächst][nächst_drehung];
 		nächst_z_h=nächst_stück.length;
 		nächst_z_b=nächst_stück[0].length;
 
-		let dx = 5-Math.ceil(nächst_z_b/2);
-		let dy = 5-Math.ceil(nächst_z_h/2);
 
-
-		switch(brunnen_index){
-			case 0:
-				soff=cursor_min_x-tetromino_onset[nächst][nächst_drehung]-dx;
-			break;
-			case 1:
-				soff=(9-cursor_max_y)-tetromino_onset[nächst][nächst_drehung]-dx;
-			break;
-			case 2:
-				soff=(9-cursor_max_x)-tetromino_onset[nächst][nächst_drehung]-dx;
-			break;
-			case 3:
-				soff=cursor_min_y-tetromino_onset[nächst][nächst_drehung]-dx;
-			break;
-		}
 
 		projizieren();
 
@@ -809,11 +834,11 @@ function redraw(){
 
 		ctx.restore();
 	}
-
+	setGlobalerZustand(alte_brunnen_zustand)
 	if (verloren){
-		ctx.drawImage(images[goimg_name[sprache]],15,29);
+		ctx.drawImage(images[goimg_name[sprache]],zentrum_x,zentrum_x);
 	} else if (siegreich){		
-		ctx.drawImage(images[siegimg_name[sprache]],15,29);
+		ctx.drawImage(images[siegimg_name[sprache]],zentrum_x,zentrum_x);
 	}
 
 
@@ -941,57 +966,46 @@ function ErzeugenMöglich(){
 }
 
 async function doMove(dx,dy){
+	console.log("doMove")
 	//stück erzeugen
 	if (verloren||siegreich){
 		return Promise.resolve(1);
 	}
 
 
-	if (dy===1){
-		if (ErzeugenMöglich()===false){
-			verloren=true;
-			redraw();
-			return Promise.resolve(1);
-		}
-
-		let stück=tetrominos[nächst][nächst_drehung];
-		let nächst_z_h=stück.length;
-		let nächst_z_b=stück[0].length;
-
-		let ox=15;
-		let oy=29-4*8;
-
-		let sx=5-Math.ceil(nächst_z_b/2)+soff;
-		let sy=0;//projizieren()-1;
-		soff=0;
-		for (let i=0;i<nächst_z_b;i++){
-			let globale_z_x=sx+i;
-			for (let j=0;j<nächst_z_h;j++){
-				let globale_z_y=sy+j;
-				console.log((stück[j][i]>>1)%16)
-				if (((stück[j][i]>>1)%16)!==0){
-					zustand[globale_z_y][globale_z_x]=stück[j][i];
-				}
-			}
-		}
-
-		wähleNeuesStück();
-
-		if(!stumm){
-			playSound(4159307);
-		}
-	} else {
-		if(!stumm){
-			playSound(44213107);
-		}
+	if (ErzeugenMöglich()===false){
+		verloren=true;
+		redraw();
+		return Promise.resolve(1);
 	}
 
+	let stück=tetrominos[nächst][nächst_drehung];
+	let nächst_z_h=stück.length;
+	let nächst_z_b=stück[0].length;
 
+	let ox=15;
+	let oy=29-4*8;
+
+	let sx=5-Math.ceil(nächst_z_b/2)+soff;
+	let sy=0;//projizieren();
+	soff=0;
+	for (let i=0;i<nächst_z_b;i++){
+		let globale_z_x=sx+i;
+		for (let j=0;j<nächst_z_h;j++){
+			let globale_z_y=sy+j;
+			if (((stück[j][i]>>1)%16)!==0){
+				zustand[globale_z_y][globale_z_x]=stück[j][i];
+			}
+		}
+	}
 
 
 	let bewegt=true;
 	while (bewegt){
 		bewegt=false;
+
+
+		console.log("bewegungenloop")
 
 		let neuezustand=[];
 		for (let j=0;j<raster_h;j++){
@@ -1016,7 +1030,7 @@ async function doMove(dx,dy){
 		let verarbeiten=true;
 		while (verarbeiten){
 			verarbeiten=false;
-
+			console.log("verarbeitenloop")
 			//bewegungen versperren
 
 			for (let i=0;i<raster_b;i++){
@@ -1086,7 +1100,14 @@ async function doMove(dx,dy){
 				}
 			}
 		}
-		zustand=neuezustand;
+		console.log("was_ist_bewegt="+was_ist_bewegt)
+
+		for (var j=0;j<neuezustand.length;j++){
+			var r = neuezustand[j];
+			for (var i=0;i<r.length;i++){
+				zustand[j][i]=neuezustand[j][i];
+			}
+		}
 
 		if (was_ist_bewegt){
 			bewegt=true;
@@ -1115,9 +1136,11 @@ async function doMove(dx,dy){
 		}
 	}
 
+	console.log("prüfZeilen")
 	await prüfZeilen();
 
 	if (ErzeugenMöglich()===false){
+		console.log("ErzeugenMöglich ist falsch")
 		verloren=true;
 		redraw();
 	}
@@ -1258,6 +1281,25 @@ function oob(){
 	}
 }
 
+async function spawn(){
+	if(!stumm){
+		playSound(4159307);
+	}
+
+	for (let brunnen_index=0;brunnen_index<MAX_BRUNNEN;brunnen_index++){
+		console.log("start"+globaler_brunnen)
+		setGlobalerZustand(brunnen_index)
+
+		await doMove(0,1,brunnen_index);
+		console.log("end"+globaler_brunnen)
+	}
+
+	wähleNeuesStück();
+	zetrum_oob();
+
+	return Promise.resolve(1);
+}
+
 async function doPress(i){
 
 	if (moving===true){
@@ -1290,7 +1332,7 @@ async function doPress(i){
 			zetrum_oob();
 		break;
 		case 6://place
-
+			await spawn();
 		break;
 		case 7://mute
 		{
@@ -1314,6 +1356,7 @@ async function doPress(i){
 	moving=false;
 	redraw();
 
+	return Promise.resolve(1);
 }
 
 function  getMousePos(evt) {
