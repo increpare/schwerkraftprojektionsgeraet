@@ -24,12 +24,6 @@ reOffset();
 window["onscroll"]=function(e){ reOffset(); }
 window["onresize"]=function(e){ reOffset(); }
 
-let brunnenZustände = [
-	{
-		zustand:[],
-		anims:[],
-	}
-];
 
 let score=0;
 let scores=[0,0,0,0];
@@ -43,8 +37,6 @@ let gw=4;
 let gh=4;
 
 
-let anim;
-let spawn;
 
 let verloren=false;
 let siegreich=false;
@@ -59,6 +51,10 @@ let verborgene_zeilen=4;
 
 let zustand=[];
 let anims=[];
+
+
+let alle_zustände=[];
+let alle_anims=[];
 
 function holZufälligeIntInklusi(min, max) {
   min = Math.ceil(min);
@@ -543,17 +539,25 @@ soff=0;
 	
 	playSound(4159307);
 
-	zustand=[];
-	for (let j=0;j<raster_h;j++){
-		let zeile=[];
-		let zeile_anim=[];
-		for (let i=0;i<raster_b;i++){
-			zeile.push(0);
-			zeile_anim.push(0);
+	alle_zustände=[]
+	alle_anims=[]
+	for (let brunnen_index=0;brunnen_index<4;brunnen_index++){
+		anims=[];
+		zustand=[];
+		for (let j=0;j<raster_h;j++){
+			let zeile=[];
+			let zeile_anim=[];
+			for (let i=0;i<raster_b;i++){
+				zeile.push(0);
+				zeile_anim.push(0);
+			}
+			zustand.push(zeile);
+			anims.push(zeile_anim);
 		}
-		zustand.push(zeile);
-		anims.push(zeile_anim);
+		alle_zustände.push(zustand)
+		alle_anims.push(anims)
 	}
+
 	if (verbindungen_ausgerechnet===false){
 		for (let i=0;i<tetrominos.length;i++){
 			let menge=tetrominos[i];
@@ -564,14 +568,6 @@ soff=0;
 		verbindungen_ausgerechnet=true;
 	}
 
-	anim=[//comesfrom
-	[[0,0],[0,0],[0,0],[0,0],[0,0]],
-	[[0,0],[0,0],[0,0],[0,0],[0,0]],
-	[[0,0],[0,0],[0,0],[0,0],[0,0]],
-	[[0,0],[0,0],[0,0],[0,0],[0,0]],
-	[[0,0],[0,0],[0,0],[0,0],[0,0]]];
-	state=[[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,0]];
-	spawn=[[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,0]];
 	score=0;
 
 	moving=false;
@@ -596,12 +592,7 @@ let _o = [
 			[247,167],
 			[167,168] 
 		]
-let _scorebox=[97,38]
-let _linesbox=[97,86]
-let _nachstbox=[97,113]
 
-let scorebox=[14,372]
-let highscorebox=[61,389]
 let PI = 3.141592653589793238462643383279;
 
 function redraw(){
@@ -916,16 +907,6 @@ function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-function full(){
-	for (let i=0;i<gw;i++){
-		for (let j=0;j<gh;j++){
-			if (state[i][j]===0){
-				return true;
-			}
-		}
-	}
-	return false;
-}
 
 let moving=false;
 
@@ -1406,19 +1387,6 @@ function handleTap(e){
 	}
 
 }
-
-function emptyCells(){
-	let result=[];
-	for(let i=0;i<gw;i++){
-		for (let j=0;j<gh;j++){
-			if (state[i][j]===0){
-				result.push([i,j]);
-			}
-		}
-	}
-	return result;
-}
-
 function neighbors (x,y){
   let result=[];
   if (x>0){
