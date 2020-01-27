@@ -28,7 +28,6 @@ window["onresize"]=function(e){ reOffset(); }
 
 
 let score=0;
-let scores=[0,0,0,0];
 let linecount=[0,0,0,0];
 
 let highscore=0;
@@ -349,7 +348,7 @@ let verbindungen_ausgerechnet=false;
 let zukünftiges=-1;
 let zukünftiges_drehung=-1;
 
-let globale_nächst_drehung=-1;
+let globale_nächst_drehung=0;
 let nächst=-1;
 let nächst_drehung=-1;
 let tasche=[0,1,2,3,4,5,6];
@@ -388,19 +387,15 @@ async function prüfZeilen(){
 			zeilen.push(j);
 		}
 	}
-
-	console.log("dscore="+dscore)
+	linecount[globaler_brunnen]+=dscore;
+	score=Math.min(...linecount)
 	
-	if (dscore>=4){
-		// siegreich=true;
-	}
-
 	// dscore=dscore*dscore;	
 	if (dscore>0){
 		redraw();		
 		//kleine pause
 
-		if (!stumm){
+		if (!stumm&&!poweroff){
 			playSound(6532707);
 		}
 		await sleep(50);
@@ -422,10 +417,9 @@ async function prüfZeilen(){
 		redraw();
 	}
 
-	score=dscore;
 	if (score>highscore){
 		highscore=score;
-		localStorage.setItem('musi_my_max_combo',highscore);
+		localStorage.setItem('musiii_my_max_combo',highscore);
 	}
 
 	return Promise.resolve(1);
@@ -491,8 +485,8 @@ function projizieren(){
 	let nächst_z_h=stück.length;
 	let nächst_z_b=stück[0].length;
 
-	let ox=168;
-	let oy=248-4*8;
+	let ox=96;
+	let oy=176-4*8;
 
 	let sx=5-Math.ceil(nächst_z_b/2)+soff;
 	let sy=0;
@@ -540,12 +534,14 @@ soff=0;
 	verloren=false;
 	siegreich=false;
 	tasche=[0,1,2,3,4,5,6];
-
+	linecount=[0,0,0,0]
+	score=0;
 	wähleNeuesStück();
 	wähleNeuesStück();
 
-	
-	playSound(4159307);
+	if (!stumm&&!poweroff){
+		playSound(4159307);
+	}
 
 	alle_zustände=[]
 	alle_anims=[]
@@ -605,7 +601,6 @@ let PI = 3.141592653589793238462643383279;
 
 let globaler_brunnen=-1;
 function setGlobalerZustand(brunnen_index){
-	console.log("setGlobalerZustand"+brunnen_index)
 	globaler_brunnen=brunnen_index;
 	zustand=alle_zustände[brunnen_index]
 	anims=alle_anims[brunnen_index]
@@ -643,8 +638,30 @@ function redraw(){
 
 	ctx.drawImage(images[bg_name[sprache]], 0, 0);	
 
-	const zentrum_x=168;
-	const zentrum_y=168;
+
+
+
+	if (stumm||poweroff){
+		ctx.drawImage(images["vol_auf"],16,16);
+	}
+
+	if (poweroff){
+		ctx.drawImage(images["power_auf"],16,224);
+	}
+
+	for(i=0;i<pressed.length;i++){
+		if (pressed[i]){
+			let dat = image_x_y[i];
+			ctx.drawImage(images[dat[sprache]],dat[2],dat[3]);
+		}
+	}
+
+	if (poweroff){
+		return;
+	}
+
+	const zentrum_x=96;
+	const zentrum_y=96;
 
 	let zukünftiges_stück=tetrominos[zukünftiges][zukünftiges_drehung];
 	let zukünftiges_z_h=zukünftiges_stück.length;
@@ -652,8 +669,8 @@ function redraw(){
 	let zukünftiges_h=zukünftiges_z_h*8;
 	let zukünftiges_b=zukünftiges_z_b*8;
 	
-	let noxes=[264,360,120,24]
-	let noys=[360,120,24,264]
+	let noxes=[184,223,54,15]
+	let noys=[223,53,15,184]
 	for (let q=0;q<4;q++){
 		let nox=noxes[q];
 		let noy=noys[q];
@@ -690,8 +707,8 @@ function redraw(){
 		let nox=zentrum_x+8*cursor_x;
 		let noy=zentrum_y+8*cursor_y;
 
-		var spalte_y=24;
-		var spalte_höhe=368;
+		var spalte_y=16;
+		var spalte_höhe=240;
 
 		//Spalten
 		for (let i=0;i<nächst_z_b;i++){
@@ -706,13 +723,13 @@ function redraw(){
 				}
 			}
 			if (has){
-				// ctx.drawImage(images["mokcup/mokcup_fg_dynamic_overlay"], globale_z_x,spalte_y,8,spalte_höhe, globale_z_x,spalte_y,8,spalte_höhe)
+				ctx.drawImage(images["mokcup/mokcup_fg_dynamic_overlay"], globale_z_x,spalte_y,8,spalte_höhe, globale_z_x,spalte_y,8,spalte_höhe)
 			}
 		}
 		
 
-		var zeile_x=24;
-		var zeile_breite=368;
+		var zeile_x=16;
+		var zeile_breite=240;
 
 		//Zeilen
 		for (let j=0;j<nächst_z_h;j++){
@@ -727,7 +744,7 @@ function redraw(){
 				}
 			}
 			if (has){
-				// ctx.drawImage(images["mokcup/mokcup_fg_dynamic_overlay"], zeile_x,globale_z_y,zeile_breite,8, zeile_x,globale_z_y,zeile_breite,8)
+				ctx.drawImage(images["mokcup/mokcup_fg_dynamic_overlay"], zeile_x,globale_z_y,zeile_breite,8, zeile_x,globale_z_y,zeile_breite,8)
 			}
 		}
 		
@@ -752,13 +769,33 @@ function redraw(){
 		}
 	}
 	
+
+	for(let i=0;i<2;i++){
+		let z_b=10;
+		let z_h=14;
+		let z_x=319;
+		let z_y=74;
+		let ziffer= Math.floor(score/(Math.pow(10,1-i)))%10;
+		ctx.drawImage(images["ziffer_nokia_gr"],10*ziffer,0,z_b,z_h,z_x+13*i,z_y,z_b,z_h);
+	}
+
+
+	for(let i=0;i<2;i++){
+		let z_b=10;
+		let z_h=14;
+		let z_x=319;
+		let z_y=94;
+		let ziffer= Math.floor(highscore/(Math.pow(10,1-i)))%10;
+		ctx.drawImage(images["ziffer_nokia_gr"],10*ziffer,0,z_b,z_h,z_x+13*i,z_y,z_b,z_h);
+	}
+
 	var alte_brunnen_zustand=globaler_brunnen;
 
 	for (let brunnen_index=0;brunnen_index<MAX_BRUNNEN;brunnen_index++){
 		ctx.save();
-		ctx.translate(208,208)
+		ctx.translate(136,136)
 		ctx.rotate(-brunnen_index*PI/2)
-		ctx.translate(-208,-208)
+		ctx.translate(-136,-136)
 		//nächst
 		
 		setGlobalerZustand(brunnen_index)
@@ -775,8 +812,8 @@ function redraw(){
 			for (let j=verborgene_zeilen;j<raster_h;j++){
 				let z=zustand[j][i];
 				if (z!==0){
-					let sbx=168;
-					let sby=248;
+					let sbx=96;
+					let sby=176;
 
 					let x=sbx+8*i;
 					let y=sby+8*(j-verborgene_zeilen);
@@ -793,44 +830,17 @@ function redraw(){
 		}
 
 
-		for(let i=0;i<3;i++){
-			let z_b=10;
-			let z_h=14;
-			let z_x=265;
-			let z_y=286;
-			let ziffer= Math.floor(scores[brunnen_index]/(Math.pow(10,i)))%10;
-			ctx.drawImage(images["ziffer_nokia_gr"],10*ziffer,0,z_b,z_h,z_x+12*i,z_y,z_b,z_h);
-		}
 
-		for(let i=0;i<3;i++){
+		for(let i=0;i<2;i++){
 			let z_b=10;
 			let z_h=14;
-			let z_x=265;
-			let z_y=334;
-			let ziffer= Math.floor(linecount[brunnen_index]/(Math.pow(10,i)))%10;
-			ctx.drawImage(images["ziffer_nokia_gr"],10*ziffer,0,z_b,z_h,z_x+12*i,z_y,z_b,z_h);
+			let z_x=190;
+			let z_y=200;
+			let ziffer= Math.floor(linecount[brunnen_index]/(Math.pow(10,1-i)))%10;
+			ctx.drawImage(images["ziffer_nokia_gr"],10*ziffer,0,z_b,z_h,z_x+13*i,z_y,z_b,z_h);
 		}
 
 
-		for(let i=0;i<3;i++){
-			let z_b=10;
-			let z_h=14;
-			let z_x=72;
-			let z_y=373;
-			let ziffer= Math.floor(score/(Math.pow(10,i)))%10;
-			ctx.drawImage(images["ziffer_nokia"],10*ziffer,0,z_b,z_h,z_x+12*i,z_y,z_b,z_h);
-		}
-
-
-
-		for(let i=0;i<3;i++){
-			let z_b=10;
-			let z_h=14;
-			let z_x=72;
-			let z_y=393;
-			let ziffer= Math.floor(highscore/(Math.pow(10,i)))%10;
-			ctx.drawImage(images["ziffer_nokia"],10*ziffer,0,z_b,z_h,z_x+12*i,z_y,z_b,z_h);
-		}
 
 		ctx.restore();
 	}
@@ -841,17 +851,6 @@ function redraw(){
 		ctx.drawImage(images[siegimg_name[sprache]],zentrum_x,zentrum_x);
 	}
 
-
-
-	if (stumm){
-		ctx.drawImage(images["btn_mute"],424,8);
-	}
-	for(i=0;i<pressed.length;i++){
-		if (pressed[i]){
-			let dat = image_x_y[i];
-			ctx.drawImage(images[dat[sprache]],dat[2],dat[3]);
-		}
-	}
 }
 
 let image_names=[
@@ -866,10 +865,14 @@ let image_names=[
 	"pressed_up",
 	"pressed_down",
 	"pressed_new",
-	"btn_mute",
-	"btn_mute_pressed",
-	"btn_unmuted_pressed",
-	"btn_unmuted",
+
+	"vol_auf",
+	"vol_auf_gedrückt",
+	"vol_an_gedrückt",
+	
+	"power_auf",
+	"power_an_gedrückt",
+	"power_auf_gedrückt",
 
 	"verloren_en",
 	"verloren_de",
@@ -883,7 +886,6 @@ let image_names=[
 	"template_6",
 	"template_7",
 	"template_umriss",
-	"ziffer_nokia",
 	"ziffer_nokia_gr",
 	"btn_oben_de",
 	"btn_unten_de",
@@ -903,18 +905,19 @@ let image_names=[
 	];
 
 let stumm=false;
+let poweroff=true;
 
 let image_x_y=[
 
-["pressed_up","pressed_up",472,269,40,40],
-["pressed_down","pressed_down",472,365,40,40],
-["pressed_left","pressed_left",424,317,40,40],
-["pressed_right","pressed_right",520,317,40,40],
-["pressed_rot1","pressed_rot1",424,365,40,40],
-["pressed_rot2","pressed_rot2",520,365,40,40],
-["pressed_drop","pressed_drop",472,317,40,40],
-["pressed_mute","pressed_mute",424,8,40,40],//7
-["pressed_new","pressed_new",520,8,40,40],
+["pressed_up","pressed_up",316,120,40,40],
+["pressed_down","pressed_down",316,216,40,40],
+["pressed_left","pressed_left",268,168,40,40],
+["pressed_right","pressed_right",364,168,40,40],
+["pressed_rot1","pressed_rot1",268,216,40,40],
+["pressed_rot2","pressed_rot2",364,216,40,40],
+["pressed_drop","pressed_drop",316,168,40,40],
+["vol_auf_gedrückt","vol_auf_gedrückt",16,16,32,55],//7
+["power_an_gedrückt","power_an_gedrückt",16,224,55,32],
 
 ];
 
@@ -1121,7 +1124,7 @@ async function doMove(dx,dy){
 			// }
 		} else {
 
-			if(!stumm){
+			if(!stumm&&!poweroff){
 				playSound(67641907);
 			}
 		}
@@ -1148,6 +1151,11 @@ async function doMove(dx,dy){
 }
 
 function cursor_dsoff(dx,dy){
+
+	if (verloren||siegreich){
+		return Promise.resolve(1);
+	}
+
 	let neue_x=cursor_x+dx;
 	let neue_y=cursor_y+dy;
 
@@ -1282,7 +1290,7 @@ function oob(){
 }
 
 async function spawn(){
-	if(!stumm){
+	if(!stumm&&!poweroff){
 		playSound(4159307);
 	}
 
@@ -1306,51 +1314,62 @@ async function doPress(i){
 		return;
 	}
 
-	moving=true;
 
 	pressed[i]=true;
 	
-	switch(i){
-		case 0:
-			cursor_dsoff(0,-1);
-		break;
-		case 1:
-			cursor_dsoff(0,1);
-		break;
-		case 2:
-			cursor_dsoff(-1,0);
-		break;
-		case 3:
-			cursor_dsoff(1,0);
-		break;
-		case 4:
-			globale_nächst_drehung=(globale_nächst_drehung+1)%tetrominos[nächst].length;
-			zetrum_oob();
-		break;
-		case 5:
-			globale_nächst_drehung=(globale_nächst_drehung+3)%tetrominos[nächst].length;
-			zetrum_oob();
-		break;
-		case 6://place
-			await spawn();
-		break;
-		case 7://mute
-		{
-			stumm=!stumm;
-			if (stumm===true){
-				image_x_y[7][0]="btn_mute_pressed";
-				image_x_y[7][1]="btn_mute_pressed";
-				music.pause();
-			} else {
-				image_x_y[7][0]="btn_unmuted_pressed";
-				image_x_y[7][1]="btn_unmuted_pressed";
-				music.play()
+
+	moving=true;
+
+	if (poweroff===false||i===8){
+		switch(i){
+			case 0:
+				cursor_dsoff(0,-1);
+			break;
+			case 1:
+				cursor_dsoff(0,1);
+			break;
+			case 2:
+				cursor_dsoff(-1,0);
+			break;
+			case 3:
+				cursor_dsoff(1,0);
+			break;
+			case 4:
+				globale_nächst_drehung=(globale_nächst_drehung+1)%tetrominos[nächst].length;
+				zetrum_oob();
+			break;
+			case 5:
+				globale_nächst_drehung=(globale_nächst_drehung+3)%tetrominos[nächst].length;
+				zetrum_oob();
+			break;
+			case 6://place
+				await spawn();
+			break;
+			case 7://mute
+			{
+				stumm=!stumm;
+				if (stumm===true){
+					image_x_y[7][0]="vol_an_gedrückt";
+					image_x_y[7][1]="vol_an_gedrückt";
+					// if (music){
+						// music.pause();
+					// }
+				} else {
+					image_x_y[7][0]="vol_auf_gedrückt";
+					image_x_y[7][1]="vol_auf_gedrückt";
+					// if (music){
+						// music.play()
+					// }
+				}
+				break;
 			}
+			case 8://restart
+				poweroff=!poweroff;
+				if (poweroff===false){
+					await resetGame();				
+				}
 			break;
 		}
-		case 8://restart
-			await resetGame();
-		break;
 	}
 
 	moving=false;
@@ -1564,7 +1583,7 @@ canvas.addEventListener("pointerup",handleUntap);
 document.addEventListener("keydown",handleKeyDown);
 document.addEventListener("keyup",handleKeyUp);
 
-highscore = parseInt(localStorage.getItem('musi_my_max_combo'));
+highscore = parseInt(localStorage.getItem('musiii_my_max_combo'));
 if (Number.isNaN(highscore)){
 	highscore=0;
 }
