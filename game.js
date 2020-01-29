@@ -863,12 +863,12 @@ let image_names=[
 	"pressed_new",
 
 	"vol_auf",
-	"vol_auf_gedrückt",
-	"vol_an_gedrückt",
+	"vol_auf_gedrueckt",
+	"vol_an_gedrueckt",
 	
 	"power_auf",
-	"power_an_gedrückt",
-	"power_auf_gedrückt",
+	"power_an_gedrueckt",
+	"power_auf_gedrueckt",
 
 	"verloren_en",
 	"template_1",
@@ -894,8 +894,8 @@ let image_x_y=[
 ["pressed_rot1","pressed_rot1",268,216,40,40],
 ["pressed_rot2","pressed_rot2",364,216,40,40],
 ["pressed_drop","pressed_drop",316,168,40,40],
-["vol_auf_gedrückt","vol_auf_gedrückt",16,16,32,55],//7
-["power_an_gedrückt","power_an_gedrückt",16,224,55,32],
+["vol_auf_gedrueckt","vol_auf_gedrueckt",16,16,32,55],//7
+["power_an_gedrueckt","power_an_gedrueckt",16,224,55,32],
 
 ];
 
@@ -1327,14 +1327,14 @@ async function doPress(i){
 			{
 				stumm=!stumm;
 				if (stumm===true){
-					image_x_y[7][0]="vol_an_gedrückt";
-					image_x_y[7][1]="vol_an_gedrückt";
+					image_x_y[7][0]="vol_an_gedrueckt";
+					image_x_y[7][1]="vol_an_gedrueckt";
 					// if (music){
 						// music.pause();
 					// }
 				} else {
-					image_x_y[7][0]="vol_auf_gedrückt";
-					image_x_y[7][1]="vol_auf_gedrückt";
+					image_x_y[7][0]="vol_auf_gedrueckt";
+					image_x_y[7][1]="vol_auf_gedrueckt";
 					// if (music){
 						// music.play()
 					// }
