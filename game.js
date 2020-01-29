@@ -529,7 +529,8 @@ function projizieren(){
 async function resetGame(){
 soff=0;
 	moving=true;
-
+	cursor_x=3;
+	cursor_y=3;
 	verloren=false;
 	tasche=[0,1,2,3,4,5,6];
 	linecount=[0,0,0,0]
