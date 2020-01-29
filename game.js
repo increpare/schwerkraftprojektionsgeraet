@@ -40,7 +40,6 @@ let gh=4;
 
 
 let verloren=false;
-let siegreich=false;
 
 let last=1;
 let laster=-1;
@@ -532,7 +531,6 @@ soff=0;
 	moving=true;
 
 	verloren=false;
-	siegreich=false;
 	tasche=[0,1,2,3,4,5,6];
 	linecount=[0,0,0,0]
 	score=0;
@@ -586,7 +584,6 @@ let piece_frames={
 let bg_name =["mokcup/mokcup_fg","mokcup/mokcup_fg"];
 
 let goimg_name =["verloren_en","verloren_en"];
-let siegimg_name =["siegreich_en","siegreich_de"];
 
 let _dx=[ [1,0],[0,-1],[-1,0],[0,1] ]
 let _dy=[ [0,1],[-1,0],[0,-1],[1,0] ]
@@ -847,8 +844,6 @@ function redraw(){
 	setGlobalerZustand(alte_brunnen_zustand)
 	if (verloren){
 		ctx.drawImage(images[goimg_name[sprache]],zentrum_x,zentrum_x);
-	} else if (siegreich){		
-		ctx.drawImage(images[siegimg_name[sprache]],zentrum_x,zentrum_x);
 	}
 
 }
@@ -875,9 +870,6 @@ let image_names=[
 	"power_auf_gedrückt",
 
 	"verloren_en",
-	"verloren_de",
-	"siegreich_en",
-	"siegreich_de",
 	"template_1",
 	"template_2",
 	"template_3",
@@ -887,21 +879,6 @@ let image_names=[
 	"template_7",
 	"template_umriss",
 	"ziffer_nokia_gr",
-	"btn_oben_de",
-	"btn_unten_de",
-	"btn_links_de",
-	"btn_rechts_de",
-	"btn_oben_en",
-	"btn_unten_en",
-	"btn_links_en",
-	"btn_rechts_en",
-	"btn_neustart_de",
-	"btn_neustart_en",
-	"btn_sprache_de",
-	"btn_sprache_en",
-	"btn_stumm_gedrückt",
-	"btn_stumm_aus",
-	"btn_stumm_aus_gedrückt",
 	];
 
 let stumm=false;
@@ -971,7 +948,7 @@ function ErzeugenMöglich(){
 async function doMove(dx,dy){
 	console.log("doMove")
 	//stück erzeugen
-	if (verloren||siegreich){
+	if (verloren){
 		return Promise.resolve(1);
 	}
 
@@ -1152,7 +1129,7 @@ async function doMove(dx,dy){
 
 function cursor_dsoff(dx,dy){
 
-	if (verloren||siegreich){
+	if (verloren){
 		return Promise.resolve(1);
 	}
 
